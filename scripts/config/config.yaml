@@ -1,0 +1,13 @@
+defaults:
+  - data: from_dataset
+  - logger: pandas
+  - method: k_fold
+  - device: ${oc.env:DEVICE_NAME}
+  - _self_
+
+h_dim: 256
+pool: mean
+normalize_data: true
+
+
+

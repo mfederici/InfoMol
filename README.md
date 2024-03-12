@@ -34,7 +34,6 @@ Machine Learning representations
 | FreeSolv      | 642    | 1            | Hydration free energy                                    | 
 | Lipophilicity | 4200   | 1            | ocatnol/water distribution coefficient                   | 
 | PCBA          | 437929 | 128          | Measured biological activities of small molecules        | 
-| HIV           | 41127  | 1            | Experimental measured ability to inhibit HIV replication | 
 | BACE          | 1513   | 1            | binding results for beta-secretase                       | 
 | BBBP          | 2039   | 1            | Blood-brain barrier penetration                          | 
 | Tox21         | 7831   | 12           | toxicity measurements on 12 biological targets           | 
@@ -44,3 +43,30 @@ Machine Learning representations
 | FishTox       | -      | -            | Fish toxicity measurements                               | 
 
 
+Selection:
+- FishTox
+- SIDER
+- BBBP
+- ESOL
+- Lipophilicity
+- PCBA
+
+
+
+# USAGE
+
+```shell
+conda env create
+```
+
+```shell
+conda activate InfoMol
+```
+
+```shell
+export PYTHONPATH=.
+```
+
+```shell
+python scripts/compute_mi.py --help
+```

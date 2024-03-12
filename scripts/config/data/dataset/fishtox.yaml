@@ -1,0 +1,3 @@
+_target_: datasets.FishTox
+root: ${device.data_root}
+

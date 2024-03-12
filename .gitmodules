@@ -1,0 +1,9 @@
+[submodule "MolCLR"]
+	path = MolCLR
+	url = https://github.com/yuyangw/MolCLR.git
+[submodule "Mole-BERT"]
+	path = Mole-BERT
+	url = https://github.com/junxia97/Mole-BERT.git
+[submodule "KPGT"]
+	path = KPGT
+	url = https://github.com/lihan97/KPGT.git

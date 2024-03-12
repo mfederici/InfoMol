@@ -1,0 +1,3 @@
+hardware: cuda
+data_root: /data
+num_workers: 16

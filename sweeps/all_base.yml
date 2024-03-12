@@ -1,0 +1,39 @@
+program: scripts/compute_mi.py
+command:
+  - ${env}
+  - ${interpreter}
+  - ${program}
+  - logger=wandb
+  - ${args_no_hyphens}
+method: grid
+parameters:
+  data/dataset:
+    values:
+      - bace
+      - aqsol
+      - esol
+      - bbbp
+      - freesolv
+      - lipo
+      - sider
+      - fishtox
+  data/encoder:
+    values:
+      - ap2dc
+      - chemberta
+      - molebert
+      - molclr
+      - kpgt
+      - estate
+      - krc
+#      - optft
+      - maccs
+      - pubchem
+      - ssc
+  method.seed:
+    values:
+      - 42
+      - 7
+      - 404
+      - 32
+      - 2

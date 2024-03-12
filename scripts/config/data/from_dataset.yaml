@@ -1,0 +1,9 @@
+defaults:
+  - dataset: ???
+  - encoder: ???
+  - _self_
+
+_target_: datasets.utils.prepare_molecular_dataset
+representation_path: ${eval:"'${device.data_root}'+'/representations'"}
+read_only: true
+

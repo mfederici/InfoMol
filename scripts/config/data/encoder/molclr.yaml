@@ -1,0 +1,3 @@
+_target_: encoder.MolCLREncoder
+pool: ${pool}
+architecture: GIN

@@ -1,0 +1,3 @@
+_target_: encoder.MoleBERTEncoder
+pool: ${pool}
+

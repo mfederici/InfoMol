@@ -1,0 +1,6 @@
+_target_: torch_geometric.datasets.MoleculeNet
+root: ${device.data_root}
+name: 'ESOL'
+
+
+
