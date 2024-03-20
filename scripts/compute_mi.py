@@ -1,9 +1,6 @@
-import time
-
 from omegaconf import OmegaConf, DictConfig
 import hydra
 from hydra.utils import instantiate
-from torch_mist.utils.logging.logger.wandb import WandbLogger
 
 from datasets.utils import NormalizedDataset
 
@@ -18,15 +15,17 @@ def parse(conf: DictConfig):
 
     data = instantiate(conf.data, _convert_='all')
 
-    if conf.normalize_data:
-        data = NormalizedDataset(data)
+    entry = data[0]
+    print(data)
+    print(
+        f"Entries: {', '.join([ f'{k}:{ [len(data)]+list(v.shape)}' if hasattr(v,'shape') else f'{k}:{len(data)}' for k, v in entry.items()])}"
+    )
 
-    method = instantiate(conf.method,
+    estimation = instantiate(conf.estimation,
         _partial_=True
     )
 
-
-    mi_estimate, log = method(
+    mi_estimate, log = estimation(
         logger=logger,
         data=data
     )
@@ -41,8 +40,3 @@ if __name__ == "__main__":
         parse()
     except Exception as e:
         print(e)
-
-
-
-
-

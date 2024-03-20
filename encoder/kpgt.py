@@ -29,7 +29,7 @@ class KPGTEncoder(DeepEncoder):
     @staticmethod
     def get_n_dim(**kwargs) -> int:
         return 2304
-    def __init__(self, version: str = DEFAULT_VERSION, verbose: bool = False):
+    def __init__(self, version: str = DEFAULT_VERSION, **kwargs):
         model_path = os.path.join(module_path, 'model', f'{version}.pth')
         if not os.path.isfile(model_path):
             raise FileNotFoundError(
@@ -38,7 +38,7 @@ class KPGTEncoder(DeepEncoder):
         self.config = config_dict[version]
         self.vocab = Vocab(N_ATOM_TYPES, N_BOND_TYPES)
 
-        super().__init__(pool=None, verbose=verbose, version=version)
+        super().__init__(pool=None, version=version, **kwargs)
 
     def _instantiate_model(self) -> nn.Module:
         # Model Initialization

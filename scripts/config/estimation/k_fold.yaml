@@ -1,0 +1,26 @@
+_target_: torch_mist.k_fold_mi_estimate
+
+folds: 10
+seed: 42
+verbose: true
+verbose_train: true
+
+x_key: ${x_key}
+y_key: ${y_key}
+
+# Estimation parameters
+estimator: smile
+hidden_dims:
+  - ${h_dim}
+neg_samples: 8
+tau: 5
+
+# Training parameters
+early_stopping: True
+patience: 20
+max_iterations: 20000
+warmup_percentage: 0.01
+batch_size: 64
+device: ${device.hardware}
+num_workers: 0
+

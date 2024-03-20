@@ -1,3 +1,5 @@
 _target_: encoder.MolCLREncoder
 pool: ${pool}
 architecture: GIN
+cache_path: ${cache.path}
+read_only: ${cache.read_only}

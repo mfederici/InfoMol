@@ -25,9 +25,9 @@ class ChemBERTaEncoder(DeepEncoder):
     def __init__(
             self,
             pool: str = 'mean',
-            verbose: bool = False,
             pretrained_model_name_or_path: Optional[str] = None,
-            device: Union[str, torch.device] = 'cpu'
+            device: Union[str, torch.device] = 'cpu',
+            **kwargs
          ):
         if pretrained_model_name_or_path is None:
             pretrained_model_name_or_path = self.DEFAULT_MODEL
@@ -35,9 +35,9 @@ class ChemBERTaEncoder(DeepEncoder):
 
         super().__init__(
             pool=pool,
-            verbose=verbose,
             device=device,
-            pretrained_model_name_or_path=pretrained_model_name_or_path
+            pretrained_model_name_or_path=pretrained_model_name_or_path,
+            **kwargs
         )
     def _instantiate_model(self) -> nn.Module:
         self.tokenizer = AutoTokenizer.from_pretrained(self.pretrained_model_name_or_path)

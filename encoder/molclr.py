@@ -57,9 +57,9 @@ class MolCLREncoder(DeepGraphEncoder):
     def __init__(
             self,
             architecture: str = DEFAULT_ARCHITECTURE,
-            verbose: bool = False,
             pool: str= DeepGraphEncoder.DEFAULT_POOL,
-            device: Union[torch.device, str] = 'cpu'
+            device: Union[torch.device, str] = 'cpu',
+            **kwargs
     ):
 
         if not (architecture in self.ARCHITECTURES):
@@ -67,10 +67,9 @@ class MolCLREncoder(DeepGraphEncoder):
 
         self.architecture = architecture
 
-        super().__init__(pool=pool, verbose=verbose, device=device, architecture=architecture)
+        super().__init__(pool=pool, device=device, architecture=architecture, **kwargs)
 
-        if self.verbose:
-            print("Model loaded")
+
 
 
     def _instantiate_model(self) -> nn.Module:

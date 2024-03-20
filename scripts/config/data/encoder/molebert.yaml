@@ -1,3 +1,4 @@
 _target_: encoder.MoleBERTEncoder
 pool: ${pool}
-
+cache_path: ${cache.path}
+read_only: ${cache.read_only}

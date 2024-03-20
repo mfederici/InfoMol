@@ -1,7 +1,8 @@
+from collections import defaultdict
 from copy import deepcopy
+from torch_geometric.datasets import MoleculeNet
 
-from encoder import CachedEncoder
-from encoder.base import Encoder
+from encoder.base import Encoder, DEEP_ENCODER
 from typing import Union, Any, Tuple, Callable, Dict, List, Optional
 
 import numpy as np
@@ -23,7 +24,7 @@ class TransformedDataset(Dataset):
     def __init__(
             self,
             dataset: Union[Dataset, np.ndarray, torch.Tensor],
-            transform: Callable,
+            transform: Union[Callable, Dict[str, Callable], List[Callable]],
     ):
         self.dataset = dataset
         self.transform = transform
@@ -31,9 +32,21 @@ class TransformedDataset(Dataset):
     def __len__(self):
         return len(self.dataset)
 
-    def __getitem__(self, idx: Union[int, slice]) -> Any:
-        return self.transform(self.dataset[idx])
+    def __iter__(self):
+        for i in range(self.__len__()):
+            yield self.__getitem__(i)
 
+    def __getitem__(self, idx: Union[int, slice]) -> Any:
+        original_data = self.dataset[idx]
+
+        if isinstance(self.transform, dict):
+            transformed_data = {key: transform(original_data) for key, transform in self.transform.items()}
+        elif isinstance(self.transform, list):
+            transformed_data = tuple([transform(original_data) for transform in self.transform])
+        else:
+            transformed_data = self.transform(original_data)
+
+        return transformed_data
 
 
 class JointTupleDataset(Dataset):
@@ -59,160 +72,93 @@ class JointTupleDataset(Dataset):
         for dataset in self.datasets:
             del dataset
 
-def prepare_molecular_dataset(
-        dataset: Dataset,
-        encoder: Encoder,
-        representation_path: Optional[str] = None,
-        read_only: bool = True,
-)-> Dataset:
-    smiles = dataset.smiles
-    if hasattr(dataset, 'y'):
-        y = dataset.y
-    else:
-        y = None
-
-    if not (representation_path is None):
-        encoder = CachedEncoder(
-            encoder=encoder,
-            cache_path=representation_path,
-            read_only=read_only
-        )
-
-    transformed_dataset = TransformedDataset(
-        smiles,
-        encoder
-    )
-
-    if y is None:
-        dataset = transformed_dataset
-    else:
-        dataset = JointTupleDataset(transformed_dataset, y)
-
-    return dataset
 
 
-def compute_mean(data: Dataset) -> Union[Dict[str, np.array], Tuple[np.array, ...], List[np.array]]:
-    mean = None
-    count = None
+
+def compute_mean_std(data: Dataset) -> Union[Dict[str, np.array], Tuple[np.array, ...], List[np.array]]:
+    values = None
 
     for entry in data:
-        if mean is None:
-            if isinstance(entry, tuple):
-                entry = list(entry)
-            mean = deepcopy(entry)
-            if hasattr(mean, 'items'):
-                count = {k: 0 for k in mean}
-            elif isinstance(mean, list) or isinstance(mean, tuple):
-                count = [0 for _ in mean]
-            else:
-                count = 0
-
-        else:
+        if values is None:
             if hasattr(entry, 'items'):
-                for k, v in entry.items():
-                    if not isnan(v):
-                        mean[k] += v
-                        count[k] += 1
+                values = defaultdict(list)
             elif isinstance(entry, list) or isinstance(entry, tuple):
-                for i, v in enumerate(entry):
-                    if not isnan(v):
-                        mean[i] += v
-                        count[i] += 1
+                values = []
+                for v in entry:
+                    assert (
+                        isinstance(v, float) or
+                        isinstance(v, int) or
+                        isinstance(v, np.ndarray) or
+                        torch.is_tensor(v)
+                    )
+                    values.append(v)
             else:
+                assert (
+                    isinstance(entry, float) or
+                    isinstance(entry, int) or
+                    isinstance(entry, np.ndarray) or
+                    torch.is_tensor(entry)
+                )
+                values = []
+
+        if hasattr(values, 'items'):
+            for k, v in entry.items():
                 if not isnan(v):
-                    mean += entry
-                    count += 1
-    if hasattr(mean, 'items'):
-        for k, v in mean.items():
-            mean[k] = mean[k] / float(count[k])
-    elif isinstance(mean, list) or isinstance(mean, tuple):
-        for i, v in enumerate(mean):
-            mean[i] = mean[i] / float(count[i])
-    else:
-        mean = mean / float(count)
-
-    return mean
-
-
-def compute_std(
-        data: Dataset,
-        mean: Union[Dict[str, np.array], Tuple[np.array, ...], List[np.array]]
-) -> Union[Dict[str, np.array], Tuple[np.array, ...], List[np.array]]:
-    std = None
-    count = None
-    for entry in data:
-        if std is None:
-            if hasattr(entry, 'items'):
-                std = {}
-                count = {}
-                for k, v in entry:
-                    std[k] = (v - mean[k]) ** 2
-                    count[k] = 0
-            elif isinstance(entry, list) or isinstance(entry, tuple):
-                std = []
-                count = []
-                for i, v in enumerate(entry):
-                    std.append((v - mean[i]) ** 2)
-                    count.append(0)
-            else:
-                std = (entry - mean) ** 2
-                count = 0
-        else:
-            if hasattr(entry, 'items'):
-                for k, v in entry.items():
-                    if not isnan(v):
-                        std[k] += (v - mean[k]) ** 2
-                        count[k] += 1
-            elif isinstance(entry, list) or isinstance(entry, tuple):
-                for i, v in enumerate(entry):
-                    if not isnan(v):
-                        std[i] += (v - mean[i]) ** 2
-                        count[i] += 1
-            else:
+                    values[k].append(v.reshape(1,-1))
+        elif isinstance(entry, list) or isinstance(entry, tuple):
+            for i, v in enumerate(entry):
                 if not isnan(v):
-                    std += (entry - mean) ** 2
-                    count += 1
-
-    if hasattr(std, 'items'):
-        for k, v in std.items():
-            mask = std[k] == 0
-            std[k] = (std[k] / float(count[k] - 1)) ** 0.5
-
-            if isinstance(mask, bool):
-                if mask:
-                    std[k] = 1.
-            else:
-                std[k][mask] = 1.
-
-    elif isinstance(std, list) or isinstance(std, tuple):
-        for i, v in enumerate(std):
-            mask = std[i] == 0
-            std[i] = (std[i] / float(count[i]-1)) ** 0.5
-            if isinstance(mask, bool):
-                if mask:
-                    std[i] = 1.
-            else:
-                std[i][mask] = 1.
-    else:
-        mask = std == 0
-        std = (std / float(count-1)) ** 0.5
-        if isinstance(mask, bool):
-            if mask:
-                std = 1.
+                    values[i].append(v.reshape(1,-1))
         else:
-            std[mask] = 1.
+            if not isnan(entry):
+                values.append(entry.reshape(1,-1))
 
-    return std
+
+    if hasattr(values, 'items'):
+        mean = {}
+        std = {}
+        for k, v in values.items():
+            vs = np.concatenate(values[k])
+            mean[k] = vs.mean(0)
+            std[k] = vs.std(0)
+
+    elif isinstance(values, list):
+        mean = []
+        std = []
+        for i, v in enumerate(values):
+            vs = np.concatenate(values[i])
+            mean.append(vs.mean(0))
+            std.append(vs.std(0))
+    else:
+        vs = np.concatenate(values)
+        mean = vs.mean(0)
+        std = vs.std(0)
+
+    return mean, std
 
 
 class NormalizeEntry:
     def __init__(
             self,
             mean: Union[Dict[str, np.array], Tuple[float, ...], List[np.array]],
-            std: Union[Dict[str, np.array], Tuple[float, ...], List[np.array]]
+            std: Union[Dict[str, np.array], Tuple[float, ...], List[np.array]],
+            min_std: float = 1e-6
     ):
         self.mean = mean
+        if hasattr(std, 'items'):
+            for k, v in std.items():
+                v[np.abs(v) < min_std] = 1
+                std[k] = v
+        elif isinstance(std, list):
+            for i, v in enumerate(std):
+                v[np.abs(v) < min_std] = 1
+                std[i] = v
+        else:
+            if np.abs(std)<min_std:
+                std = 1
+
         self.std = std
+
 
     def __call__(
             self,
@@ -220,11 +166,16 @@ class NormalizeEntry:
     ) -> Union[Dict[str, np.array], Tuple[np.array, ...], List[np.array]]:
         if hasattr(entry, 'items'):
             norm_entry = {}
-            for k, v in entry.items():
-                norm_entry[k] = (v - self.mean[k]) / self.std[k]
-        elif isinstance(entry, tuple) or isinstance(entry, list):
+            for k in entry:
+                if k in self.mean:
+                    norm_entry[k] = (entry[k] - self.mean[k]) / self.std[k]
+                else:
+                    norm_entry[k] = entry[k]
+
+        elif isinstance(self.mean, tuple) or isinstance(entry, list):
             norm_entry = []
-            for i, v in enumerate(entry):
+            assert len(entry) == len(self.mean)
+            for i, v in enumerate(self.mean):
                 norm_entry.append((v - self.mean[i]) / self.std[i])
         else:
             norm_entry = (entry - self.mean) / self.std
@@ -243,8 +194,8 @@ def isnan(x):
 def normalize_data(
         data: Dataset,
 ) -> Dataset:
-    mean = compute_mean(data)
-    std = compute_std(data, mean)
+    mean, std = compute_mean_std(data)
+
 
     return TransformedDataset(
         data, NormalizeEntry(mean, std)
@@ -252,10 +203,82 @@ def normalize_data(
 
 class NormalizedDataset(TransformedDataset):
     def __init__(self, dataset: Dataset):
-        mean = compute_mean(dataset)
-        std = compute_std(dataset, mean)
-
+        mean, std = compute_mean_std(dataset)
         super().__init__(
             dataset=dataset,
             transform=NormalizeEntry(mean, std)
         )
+
+
+def prepare_molecular_dataset(
+        dataset: Dataset,
+        encoder: Union[Dict[str, Encoder], Encoder],
+)-> Dataset:
+    if isinstance(encoder, Encoder):
+        encoder = {'x': encoder}
+
+    if isinstance(dataset, MoleculeNet):
+        dataset = JointTupleDataset(dataset.smiles, dataset.y)
+
+    data = dataset[0]
+
+    if isinstance(data, list) or isinstance(data, tuple):
+        assert isinstance(data[0], str)
+        def encode_smiles(args) -> Dict[str, Any]:
+            nonlocal encoder
+            smiles = args[0]
+            args = args[1:]
+            data = {}
+                # 'smiles': smiles,
+            # }
+            for name, e in encoder.items():
+                data[name] = e(smiles)
+
+            if len(args) == 1:
+                data['y'] = args[0]
+            elif len(args)>1:
+                for i, arg in enumerate(args):
+                    data[f'target_{i+1}'] = arg
+            return data
+        wrapped_encoder = encode_smiles
+    elif isinstance(data, dict):
+        assert 'smiles' in data
+        for key in data:
+            assert not (key in encoder)
+        def encode_smiles(data_dict: Dict[str, Any]) -> Dict[str, Any]:
+            nonlocal encoder
+            smiles = data_dict['smiles']
+            del data_dict['smiles']
+            data_dict.update({name: e(smiles) for name, e in encoder.items()})
+            return data_dict
+        wrapped_encoder = encode_smiles
+    else:
+        wrapped_encoder = encoder
+
+    dataset = TransformedDataset(
+        dataset,
+        wrapped_encoder
+    )
+
+    normalization = None
+
+    # Normalize the dataset for deep encoders
+    if isinstance(encoder, Encoder):
+        if encoder.type == DEEP_ENCODER:
+            mean, std = compute_mean_std(dataset)
+            normalization = NormalizeEntry({'x': mean['x']}, {'x': std['x']})
+    else:
+        keys_to_normalize = set()
+        for key, e in encoder.items():
+            if e.type == DEEP_ENCODER:
+                keys_to_normalize.add(key)
+        mean, std = compute_mean_std(dataset)
+        mean = {k:v for k,v in mean.items() if k in keys_to_normalize}
+        std = {k:v for k,v in std.items() if k in keys_to_normalize}
+        normalization = NormalizeEntry(mean, std)
+
+    if normalization:
+        dataset = TransformedDataset(dataset, transform=normalization)
+
+    return dataset
+

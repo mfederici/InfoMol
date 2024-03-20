@@ -1,6 +1,3 @@
-defaults:
-  - transform: num_heavy_atoms
-
 _target_: datasets.ZINCSmiles
 root: ${device.data_root}
 

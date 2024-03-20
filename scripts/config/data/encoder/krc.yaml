@@ -1,2 +1,3 @@
 _target_: encoder.KlekotaRothFingerprintCount
-
+cache_path: ${cache.path}
+read_only: ${cache.read_only}

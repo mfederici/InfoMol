@@ -1,34 +1,32 @@
 import os
-from typing import Dict, Any, List, Optional, Callable, Type
+from typing import Dict, Any, List, Optional, Callable, Type, Tuple
 
 import numpy as np
 import pandas as pd
 import torch
 from torch.utils.data import Dataset
-from torch_geometric.data import InMemoryDataset, Data
+from torch_geometric.data import InMemoryDataset, Data, download_url
 from torch_geometric.data.data import BaseData
 
-
-class FishTox(InMemoryDataset):
+# Original dataset from https://uvaauas.figshare.com/ndownloader/files/35936597
+class FishTox(Dataset):
+    URL = "https://raw.githubusercontent.com/mfederici/InfoMol/master/data/toxicity_data_fish_desc.csv"
+    FILENAME = "toxicity_data_fish_desc.csv"
     def __init__(self,
                  root: str,
-                 transform: Optional[Callable] = None,
-                 pre_transform: Optional[Callable] = None,
-                 pre_filter: Optional[Callable] = None,
                  ):
-        filepath = os.path.join(root, 'fishtox.csv')
-        if not os.path.isfile(filepath):
-            raise ValueError("The root does not contain the fishtox.csv file")
-        super().__init__(root=root, transform=transform, pre_transform=pre_transform, pre_filter=pre_filter)
-        self.data, self.slices = self.load(filepath)
+        data_dir = os.path.join(root, 'FishTox')
+        data_filepath = os.path.join(data_dir, self.FILENAME)
 
+        if not os.path.isfile(data_filepath):
+            download_url(self.URL, data_dir)
 
-    def load(self, path: str, data_cls: Type[BaseData] = Data):
-        dataframe = pd.read_csv(path)
-        self.y = torch.FloatTensor(dataframe['LC50'].values).reshape(-1,1)
+        dataframe = pd.read_csv(data_filepath)
+        self.y = dataframe['LC50[-LOG(mol/L)]'].values.reshape(-1, 1).astype(np.float32)
         self.smiles = list(dataframe['SMILES'].values)
-        slices = {'smiles': self.smiles, 'y': self.y}
-        return data_cls(**slices), slices
+
+    def __getitem__(self, item) -> Tuple[str, float]:
+        return self.smiles[item], self.y[item]
 
     def __len__(self):
         return len(self.smiles)

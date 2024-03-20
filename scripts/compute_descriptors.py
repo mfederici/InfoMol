@@ -2,7 +2,6 @@ from torch_geometric.datasets import MoleculeNet
 
 from datasets import FishTox, ZINCSmiles, AQSOLSmiles
 from encoder import *
-from encoder.cached import CachedEncoder
 
 # Selection:
 # - FishTox
@@ -18,27 +17,24 @@ ROOT = '/data'
 CACHE_PATH = '/data/representations'
 
 if __name__ == '__main__':
-    fingerprinters = [
+    encoders = [
         # ChemBERTaEncoder(verbose=True),
         # MoleBERTEncoder(verbose=True),
         # MolCLREncoder(verbose=True),
         # KPGTEncoder(verbose=True),
         # PubchemFingerprinter(verbose=True),
-        # AtomPairs2DFingerprintCount(verbose=True),
+        AtomPairs2DFingerprintCount(verbose=True, cache_path=CACHE_PATH, read_only=False),
         # KlekotaRothFingerprintCount(verbose=True),
         # MACCSFingerprinter(verbose=True),
         # SubstructureFingerprintCount(verbose=True),
         # EStateFingerprinter(verbose=True),
-        OptimizedFishToxFingerprinter(verbose=True, cache_path=CACHE_PATH, cache_components=True)
-    ]
-
-    encoders = [
-        CachedEncoder(
-            encoder=fingerprinter,
-            cache_path=CACHE_PATH,
-            write_size=1000,
-            read_only=False
-        ) for fingerprinter in fingerprinters
+        # OptimizedFishToxFingerprinter(verbose=True, cache_path=CACHE_PATH, read_only=False)
+        NumAtoms(verbose=True, cache_path=CACHE_PATH, read_only=False),
+        NumHeavyAtoms(verbose=True, cache_path=CACHE_PATH, read_only=False),
+        NumRings(verbose=True, cache_path=CACHE_PATH, read_only=False),
+        NumAromaticRings(verbose=True, cache_path=CACHE_PATH, read_only=False),
+        MolecularWeight(verbose=True, cache_path=CACHE_PATH, read_only=False),
+        MolecularFormula(verbose=True, cache_path=CACHE_PATH, read_only=False)
     ]
 
     datasets = [

@@ -11,7 +11,7 @@ import multiprocessing
 
 import pandas as pd
 
-from encoder.base import Encoder
+from encoder.base import Encoder, FINGERPRINT_ENCODER
 from utils.batching import make_batches
 
 FINGERPRINTS = [
@@ -35,6 +35,7 @@ FINGERPRINTS = [
 
 class PadelpyFingerprinter(Encoder):
     PREFIX: str = ""
+    type: str = FINGERPRINT_ENCODER
 
     def __init__(
             self,
@@ -42,9 +43,9 @@ class PadelpyFingerprinter(Encoder):
             maxruntime: int = -1,
             threads: int = -1,
             max_batch_size: Optional[int] = None,
-            verbose: bool = False
+            **kwargs
     ):
-        super().__init__(verbose)
+        super().__init__(**kwargs)
 
         assert self.name in FINGERPRINTS
 
@@ -59,7 +60,7 @@ class PadelpyFingerprinter(Encoder):
         if threads == -1:
             threads = multiprocessing.cpu_count()
 
-        if verbose:
+        if self.verbose:
             print(f"Using {threads} threads.")
 
         self.threads = threads
@@ -158,7 +159,7 @@ class PadelpyFingerprinter(Encoder):
 
         return fingerprints
 
-    def encode_all(self, smiles: List[str]) -> np.ndarray:
+    def _encode_all(self, smiles: List[str]) -> np.ndarray:
         assert len(smiles) > 0
         # Split computation in batches of the specified size
         smiles_batches = make_batches(smiles, self.max_batch_size)
@@ -181,7 +182,7 @@ class PadelpyFingerprinter(Encoder):
 
         return fingerprints
 
-    def encode(self, smile: str) -> np.ndarray:
+    def _encode_one(self, smile: str) -> np.ndarray:
         return self._run_padelpy([smile])[0]
 
     def __repr__(self):
@@ -322,7 +323,7 @@ class AtomPairs2DFingerprintCount(PadelpyFingerprinter):
             for i in range(len(self.ATOMS)):
                 for j in range(i, len(self.ATOMS)):
                     columns.append(
-                        f"{self.FINGERPRINTS[self.name]['prefix']}{n}_{self.ATOMS[i]}_{self.ATOMS[j]}"
+                        f"{self.PREFIX}{n}_{self.ATOMS[i]}_{self.ATOMS[j]}"
                     )
         return columns
 

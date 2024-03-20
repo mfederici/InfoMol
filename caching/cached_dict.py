@@ -157,7 +157,7 @@ class CachedTensorDict:
 
     def __setitem__(self, key: str, value: Optional[np.ndarray]):
         assert not self.read_only
-        assert value is None or value.shape == self._base_shape
+        assert value is None or value.shape == self._base_shape, f"{value.shape}!={self._base_shape}"
 
         if not key in self:
             self._add_to_cache(key, value)

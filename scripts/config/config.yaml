@@ -1,13 +1,19 @@
 defaults:
-  - data: from_dataset
+  - data: from_labeled_dataset
   - logger: pandas
-  - method: k_fold
+  - estimation: k_fold
   - device: ${oc.env:DEVICE_NAME}
   - _self_
 
+cache:
+  path: ${eval:"'${device.data_root}'+'/representations'"}
+  read_only: true
+
 h_dim: 256
 pool: mean
-normalize_data: true
+normalize_data: false
+x_key: 'x'
+y_key: 'y'
 
 
 

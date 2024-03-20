@@ -1,0 +1,38 @@
+program: scripts/compute_mi.py
+command:
+  - ${env}
+  - ${interpreter}
+  - ${program}
+  - logger=wandb
+  - data=from_dataset
+  - data/dataset=zinc
+  - estimation=simple
+  - estimation.max_iterations=1000000
+  - ${args_no_hyphens}
+method: grid
+parameters:
+  data/encoder@data/encoder.x:
+    values:
+      - ap2dc
+      - chemberta
+      - molebert
+      - molclr
+      - kpgt
+      - estate
+      - krc
+      - maccs
+      - pubchem
+      - ssc
+  data/encoder@data/encoder.y:
+    values:
+      - molecular_formula
+      - molecular_weight
+      - num_rings
+      - num_aromatic_rings
+      - num_heavy_atoms
+      - num_atoms
+  estimation.seed:
+    values:
+      - 42
+      - 7
+      - 404

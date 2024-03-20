@@ -1,9 +1,8 @@
 defaults:
-  - dataset: ???
-  - encoder: ???
+  - dataset: zinc
+  - encoder@encoder.x: ???
+  - encoder@encoder.y: ???
   - _self_
 
 _target_: datasets.utils.prepare_molecular_dataset
-representation_path: ${eval:"'${device.data_root}'+'/representations'"}
-read_only: true
 

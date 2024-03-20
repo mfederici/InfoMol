@@ -8,24 +8,29 @@ from torch import nn
 from torch_geometric.data import Data
 
 from encoder import Encoder
+from encoder.base import DEEP_ENCODER
 
 
 class DeepEncoder(Encoder):
     POOL : List[str] = []
     DEFAULT_POOL = 'mean'
+    type: str = DEEP_ENCODER
 
-    def __init__(self, pool: Optional[str] = DEFAULT_POOL, verbose: bool=False, device: Union[torch.device, str] = 'cpu', **kwargs):
-        if len(self.POOL)>0 and not (pool in self.POOL):
+    def __init__(self, pool: Optional[str] = DEFAULT_POOL, device: Union[torch.device, str] = 'cpu', **kwargs):
+        if len(self.POOL) >0 and not (pool in self.POOL):
             raise ValueError(f'The available pool stratefies are {self.POOL} (default: "mean")')
         self.pool = pool
 
-        super().__init__(verbose=verbose, pool=pool, **kwargs)
+        super().__init__(pool=pool, **kwargs)
         if self.verbose:
             print(f'Instantiating the model.')
         model = self._instantiate_model()
 
         self.device = device
         self.model = model.to(device).eval()
+
+        if self.verbose:
+            print("Model loaded")
 
     @abstractmethod
     def _instantiate_model(self) -> nn.Module:
@@ -35,7 +40,7 @@ class DeepEncoder(Encoder):
     def _model_encode_smile(self, smile: str) -> torch.Tensor:
         raise NotImplementedError()
 
-    def encode(self, smile: str) -> np.ndarray:
+    def _encode_one(self, smile: str) -> np.ndarray:
         try:
             representation = self._model_encode_smile(smile)
             representation = representation.to('cpu').data.numpy()

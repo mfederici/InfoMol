@@ -1,1 +1,3 @@
 _target_: encoder.KPGTEncoder
+cache_path: ${cache.path}
+read_only: ${cache.read_only}

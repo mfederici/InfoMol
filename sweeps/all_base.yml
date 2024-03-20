@@ -12,7 +12,7 @@ parameters:
       - bace
       - aqsol
       - esol
-      - bbbp
+#      - bbbp
       - freesolv
       - lipo
       - sider
@@ -30,7 +30,12 @@ parameters:
       - maccs
       - pubchem
       - ssc
-  method.seed:
+      - molecular_formula
+      - molecular_weight
+      - num_rings
+      - num_aromatic_rings
+      - num_heavy_atoms
+  estimation.seed:
     values:
       - 42
       - 7

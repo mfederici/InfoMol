@@ -1,3 +1,5 @@
 _target_: encoder.ChemBERTaEncoder
 pool: ${pool}
 pretrained_model_name_or_path: seyonec/ChemBERTa_zinc250k_v2_40k
+cache_path: ${cache.path}
+read_only: ${cache.read_only}
